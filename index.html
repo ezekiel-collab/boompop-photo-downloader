@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boompop VDB Photo Downloader</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0e1a;--surface:#111827;--surface2:#1a2235;
+  --border:rgba(255,255,255,0.08);--border2:rgba(255,255,255,0.14);
+  --text:#e2e8f0;--text-dim:#94a3b8;--text-muted:#475569;
+  --purple:#7c3aed;--purple-light:#a78bfa;--amber:#f59e0b;
+  --green:#10b981;--red:#ef4444;
+}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;gap:16px;height:60px;position:sticky;top:0;z-index:100;}
+.header-logo{width:36px;height:36px;background:var(--purple);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.header-title{font-size:15px;font-weight:700;}
+.header-sub{font-size:11px;color:var(--text-muted);}
+.header-credit{margin-left:auto;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.06em;}
+.layout{display:flex;flex:1;min-height:0;}
+.sidebar{width:300px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;padding:16px;gap:12px;}
+.main-content{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:16px;padding-bottom:80px;}
+.section-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:6px;}
+input[type=text],input[type=url]{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;font-size:12.5px;color:var(--text);font-family:inherit;outline:none;transition:border-color 0.15s;}
+input:focus{border-color:var(--purple);}
+input::placeholder{color:var(--text-muted);}
+.btn{display:flex;align-items:center;justify-content:center;gap:7px;padding:9px 14px;border-radius:8px;font-size:12.5px;font-weight:600;cursor:pointer;border:none;font-family:inherit;transition:all 0.15s;white-space:nowrap;}
+.btn-primary{background:var(--purple);color:#fff;width:100%;}
+.btn-primary:hover:not(:disabled){background:#6d28d9;transform:translateY(-1px);}
+.btn-primary:disabled{background:var(--surface2);color:var(--text-muted);cursor:not-allowed;transform:none;}
+.btn-amber{background:var(--amber);color:#000;}
+.btn-amber:hover:not(:disabled){filter:brightness(1.1);}
+.btn-amber:disabled{background:var(--surface2);color:var(--text-muted);cursor:not-allowed;}
+.btn-purple-outline{background:rgba(124,58,237,0.12);border:1px solid rgba(124,58,237,0.3);color:var(--purple-light);}
+.btn-purple-outline:hover:not(:disabled){background:rgba(124,58,237,0.2);}
+.btn-purple-outline:disabled{opacity:0.4;cursor:not-allowed;}
+.btn-red-outline{background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.25);color:#f87171;}
+.btn-red-outline:hover:not(:disabled){background:rgba(239,68,68,0.2);}
+.btn-sm{padding:5px 10px;font-size:11px;}
+.btn-full{width:100%;}
+.size-filter{display:flex;gap:4px;flex-wrap:wrap;}
+.size-btn{padding:5px 9px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid var(--border2);background:var(--surface2);color:var(--text-dim);font-family:inherit;transition:all 0.15s;display:flex;flex-direction:column;align-items:center;}
+.size-btn small{font-size:8.5px;font-weight:400;color:var(--text-muted);}
+.size-btn.active{background:var(--purple);border-color:var(--purple);color:#fff;}
+.size-btn.active small{color:rgba(255,255,255,0.7);}
+.setup-box{background:var(--surface2);border:1px solid var(--border2);border-radius:10px;padding:14px;}
+.setup-box h3{font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.setup-box p{font-size:11px;color:var(--text-dim);line-height:1.6;margin-bottom:8px;}
+.step{display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;}
+.step-num{width:18px;height:18px;background:var(--purple);border-radius:50%;font-size:10px;font-weight:700;color:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+.step-text{font-size:11px;color:var(--text-dim);line-height:1.5;}
+.divider{height:1px;background:var(--border);}
+.basket-section{border-radius:10px;padding:11px 13px;display:flex;flex-direction:column;gap:8px;}
+.basket-header-s{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);}
+.basket-sleeping-s{background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);}
+.basket-title-row{display:flex;align-items:center;gap:6px;}
+.basket-title{font-size:12px;font-weight:700;flex:1;}
+.basket-title.amber{color:var(--amber);}
+.basket-title.purple{color:var(--purple-light);}
+.basket-count{font-size:10px;color:var(--text-muted);}
+.basket-thumbs{display:flex;flex-wrap:wrap;gap:4px;}
+.basket-thumb{position:relative;width:52px;height:42px;border-radius:5px;overflow:hidden;border:1px solid var(--border);flex-shrink:0;}
+.basket-thumb img{width:100%;height:100%;object-fit:cover;}
+.basket-remove{position:absolute;top:1px;right:1px;width:13px;height:13px;background:rgba(239,68,68,0.85);border:none;border-radius:50%;color:#fff;font-size:7px;cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity 0.15s;}
+.basket-thumb:hover .basket-remove{opacity:1;}
+.clear-row{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15);border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.clear-label{font-size:10.5px;font-weight:700;color:#f87171;flex:1;white-space:nowrap;}
+.photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
+.photo-card{position:relative;border-radius:8px;overflow:hidden;background:var(--surface2);aspect-ratio:4/3;border:2px solid transparent;cursor:pointer;transition:border-color 0.15s,transform 0.15s;}
+.photo-card:hover{transform:translateY(-2px);border-color:var(--border2);}
+.photo-card.selected{border-color:var(--purple);}
+.photo-card.selected::after{content:'✓';position:absolute;top:6px;right:6px;width:20px;height:20px;background:var(--purple);color:#fff;border-radius:50%;font-size:11px;display:flex;align-items:center;justify-content:center;}
+.photo-card img{width:100%;height:100%;object-fit:cover;display:block;}
+.photo-fmt{position:absolute;bottom:5px;right:5px;background:rgba(0,100,40,0.85);color:#00ee88;font-size:8.5px;font-weight:700;padding:2px 5px;border-radius:3px;}
+.photo-px{position:absolute;bottom:5px;left:5px;background:rgba(0,0,0,0.65);color:rgba(255,255,255,0.8);font-size:8px;font-weight:600;padding:2px 5px;border-radius:3px;display:none;}
+.photo-actions{position:absolute;top:5px;left:5px;display:flex;gap:4px;opacity:0;transition:opacity 0.15s;}
+.photo-card:hover .photo-actions{opacity:1;}
+.photo-action-btn{width:24px;height:24px;background:rgba(0,0,0,0.7);border:none;border-radius:5px;color:#fff;font-size:11px;cursor:pointer;}
+.photo-action-btn:hover{background:var(--purple);}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding:60px 20px;text-align:center;color:var(--text-dim);}
+.empty-emoji{font-size:48px;}
+.empty-state p{font-size:13px;line-height:1.7;max-width:420px;}
+.empty-state strong{color:var(--text);}
+.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 14px;}
+.toolbar-count{font-size:12px;font-weight:700;flex:1;}
+.toolbar-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.download-bar{position:fixed;bottom:0;left:300px;right:0;background:var(--surface);border-top:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;z-index:50;}
+.download-btn{background:linear-gradient(135deg,#7c3aed,#5b21b6);color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;flex:1;}
+.download-btn:hover:not(:disabled){filter:brightness(1.1);}
+.download-btn:disabled{background:var(--surface2);color:var(--text-muted);cursor:not-allowed;}
+.folder-row{display:flex;align-items:center;gap:6px;}
+.folder-row label{font-size:11px;color:var(--text-muted);white-space:nowrap;}
+.folder-row input{width:140px;}
+.success-msg{font-size:12px;color:var(--green);}
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--surface);border:1px solid var(--border2);border-radius:8px;padding:9px 18px;font-size:12px;color:var(--text);opacity:0;transition:opacity 0.2s,transform 0.2s;z-index:999;pointer-events:none;white-space:nowrap;box-shadow:0 4px 16px rgba(0,0,0,0.4);}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+#lightbox{position:fixed;inset:0;z-index:998;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;}
+#lightbox.open{display:flex;}
+#lightbox img{max-width:90vw;max-height:90vh;object-fit:contain;border-radius:8px;}
+#lbClose{position:fixed;top:16px;right:16px;width:36px;height:36px;background:rgba(255,255,255,0.1);border:none;border-radius:8px;color:#fff;font-size:18px;cursor:pointer;}
+.spinner{width:13px;height:13px;border:2px solid rgba(124,58,237,0.2);border-top-color:var(--purple);border-radius:50%;animation:spin 0.6s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.proxy-note{background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:8px;padding:10px 13px;font-size:11px;color:#fcd34d;line-height:1.6;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">✳️</div>
+  <div>
+    <div class="header-title">Boompop VDB Photo Downloader</div>
+    <div class="header-sub">Web App — No extension required</div>
+  </div>
+  <div class="header-credit">Created by: Ezekiel Bolo</div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+
+    <!-- URL INPUT -->
+    <div class="setup-box">
+      <h3>🔍 Scan a hotel page</h3>
+      <p>Paste the hotel URL below and click Scan:</p>
+      <input type="url" id="urlInput" placeholder="https://www.expedia.com/..." style="margin-bottom:8px">
+      <button class="btn btn-primary btn-full" id="scanBtn">
+        <span id="scanSpinner" style="display:none" class="spinner"></span>
+        <span id="scanLabel">🔍 Scan for Photos</span>
+      </button>
+      <button class="btn btn-full" id="pasteHtmlSidebar" onclick="showPasteModal()" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);color:#f59e0b;margin-top:6px;">📋 Paste HTML instead</button>
+    </div>
+
+    <!-- HOW TO USE -->
+    <div class="setup-box">
+      <h3>📖 How to use</h3>
+      <div class="step"><span class="step-num">1</span><span class="step-text">Open hotel page in Chrome, copy the URL</span></div>
+      <div class="step"><span class="step-num">2</span><span class="step-text">Paste URL above and click <strong style="color:var(--purple-light)">Scan</strong></span></div>
+      <div class="step"><span class="step-num">3</span><span class="step-text">Select photos → add to basket</span></div>
+      <div class="step"><span class="step-num">4</span><span class="step-text">Open Boompop edit page → click Upload</span></div>
+    </div>
+
+    <!-- SIZE FILTER -->
+    <div>
+      <div class="section-label">Min Photo Size</div>
+      <div class="size-filter">
+        <button class="size-btn active" data-size="0">Any</button>
+        <button class="size-btn" data-size="300">Small<small>300px+</small></button>
+        <button class="size-btn" data-size="600">Medium<small>600px+</small></button>
+        <button class="size-btn" data-size="1000">Large<small>1000px+</small></button>
+        <button class="size-btn" data-size="1500">XL<small>1500px+</small></button>
+      </div>
+      <input type="hidden" id="sizeFilter" value="0">
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- CLEAR BOOMPOP -->
+    <div class="clear-row">
+      <span class="clear-label">🗑 Clear Boompop Photos</span>
+      <button class="btn btn-red-outline btn-sm" id="clearBoompopBtn">🖼 Header</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- HEADER BASKET -->
+    <div class="basket-section basket-header-s" id="headerBasketSection" style="display:none">
+      <div class="basket-title-row">
+        <span class="basket-title amber">🧺 Header Basket</span>
+        <span class="basket-count" id="headerBasketCount"></span>
+        <button class="btn btn-sm btn-amber" id="uploadHeaderBtn" style="font-size:10px;padding:4px 8px">⬆ Upload</button>
+        <button class="btn btn-sm btn-red-outline" id="clearHeaderBasketBtn" style="padding:4px 8px">🗑</button>
+      </div>
+      <div class="basket-thumbs" id="headerBasketThumbs"></div>
+    </div>
+
+    <!-- SLEEPING BASKET -->
+    <div class="basket-section basket-sleeping-s" id="sleepingBasketSection" style="display:none">
+      <div class="basket-title-row">
+        <span class="basket-title purple">🛏 Sleeping Basket</span>
+        <span class="basket-count" id="sleepingBasketCount"></span>
+        <button class="btn btn-sm btn-purple-outline" id="uploadSleepingBtn" style="font-size:10px;padding:4px 8px">⬆ Upload</button>
+        <button class="btn btn-sm btn-red-outline" id="clearSleepingBasketBtn" style="padding:4px 8px">🗑</button>
+      </div>
+      <div class="basket-thumbs" id="sleepingBasketThumbs"></div>
+    </div>
+
+  </div>
+
+  <!-- MAIN -->
+  <div class="main-content">
+    <div class="empty-state" id="emptyState">
+      <div class="empty-emoji">🏨</div>
+      <p>Paste a hotel URL in the sidebar and click <strong>Scan for Photos</strong>.<br><br>
+      Works with <strong>Expedia</strong>, <strong>Peerspace</strong>, <strong>Booking.com</strong>, <strong>Marriott</strong>, <strong>Hilton</strong> and more.</p>
+    </div>
+    <div id="statusBar" style="display:none;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 13px;font-size:12px;color:var(--text-dim);align-items:center;gap:8px;">
+      <div class="spinner"></div>
+      <span id="statusText">Scanning...</span>
+    </div>
+    <div class="toolbar" id="toolbar" style="display:none">
+      <span class="toolbar-count" id="photoCount"></span>
+      <div class="toolbar-actions">
+        <button class="btn btn-sm btn-purple-outline" id="selectAllBtn">Select All</button>
+        <button class="btn btn-sm btn-amber" id="addToHeaderBtn" disabled>🧺 Header Basket</button>
+        <button class="btn btn-sm btn-purple-outline" id="addToSleepingBtn" disabled>🛏 Sleeping Basket</button>
+      </div>
+    </div>
+    <div class="photo-grid" id="photoGrid"></div>
+  </div>
+</div>
+
+<div class="download-bar" id="downloadBar" style="display:none">
+  <div class="folder-row">
+    <label>📁</label>
+    <input type="text" id="folderName" value="Hotel Photos">
+  </div>
+  <label style="font-size:11px;color:var(--text-muted);display:flex;align-items:center;gap:5px;white-space:nowrap">
+    <input type="checkbox" id="convertJpg" checked> JPG
+  </label>
+  <button class="download-btn" id="downloadBtn" disabled>⬇ Download Selected</button>
+  <span class="success-msg" id="successMsg"></span>
+</div>
+
+<div id="lightbox"><button id="lbClose">✕</button><img id="lbImg" src="" alt=""></div>
+<div id="toast"></div>
+
+<script>
+const CHATGPT_URL='https://chatgpt.com/g/g-686301059fa88191a12cedeb151673f4-photo-edits-2-0';
+let allPhotos=[];
+let headerBasket=[];
+let sleepingBasket=[];
+
+// Toast
+let toastTimer;
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),3500);}
+
+// Lightbox
+document.getElementById('lbClose').onclick=()=>document.getElementById('lightbox').classList.remove('open');
+document.getElementById('lightbox').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.classList.remove('open');});
+function openLightbox(src){document.getElementById('lbImg').src=src;document.getElementById('lightbox').classList.add('open');}
+
+// Size filter
+document.querySelectorAll('.size-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.size-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('sizeFilter').value=btn.dataset.size;
+  });
+});
+
+// URL quality upgrade
+function toHQ(src){try{const url=new URL(src);const h=url.hostname;
+  if(h.includes('trvl-media')||h.includes('exp-media')||h.includes('mediaim.expedia')){const clean=url.pathname.replace(/(_[bszlmtyn])(\.(jpg|jpeg|png|webp))/i,'$2');return`https://${h}${clean}?impolicy=resizecrop&rw=1600&rh=1067&ra=fit`;}
+  if(h.includes('img.peerspace.com')&&url.pathname.includes('/image/upload/')){const parts=url.pathname.split('/image/upload/');if(parts.length===2){const segs=parts[1].split('/');let st=segs.length-1;for(let i=0;i<segs.length;i++){if(!segs[i].match(/^[a-z_]+[_=]|[,]/)){st=i;break;}}return`https://img.peerspace.com/image/upload/f_auto,q_auto,w_3840/${segs.slice(st).join('/')}`;}}
+  if(h.includes('bstatic')||h.includes('booking.com'))return src.replace(/\/max\d+(?:x\d+)?\//, '/max2048x1536/');
+  if(h.includes('marriott'))return src.replace(/\?.*/,'').replace(/_\d+x\d+/,'')+'?interpolation=progressive-bilinear&downsize=1600px:*';
+  if(h.includes('hilton'))return src.replace(/\/\d+x\d+\//,'/1600x1200/');
+  ['w','width','rw','imwidth'].forEach(p=>{if(url.searchParams.has(p))url.searchParams.set(p,'1600');});
+  return url.href;}catch(e){return src;}}
+
+function isPhoto(src){if(!src||src.length<10||src.startsWith('data:'))return false;if(/icon|logo|sprite|flag|star|rating|avatar|spinner|placeholder|\.svg|\.gif|\.ico/i.test(src))return false;const l=src.toLowerCase();if(/\.(jpg|jpeg|png|webp|avif)(\?|$)/i.test(l))return true;if(/trvl-media|exp-media|mediaim\.expedia|img\.peerspace\.com/i.test(l))return true;if(/cloudinary|imgix|cloudfront|fastly|akamai|marriott|hilton|ihg|hyatt|wyndham|accor|melia/i.test(l))return true;return false;}
+
+function dedupKey(src){try{const url=new URL(src);const h=url.hostname;if(h.includes('trvl-media')||h.includes('exp-media')){const c=url.pathname.replace(/(_[bszlmtyn])(\.(jpg|jpeg|png|webp))/i,'$2');return(h+c).toLowerCase();}return(h+url.pathname).toLowerCase().replace(/_\d+x\d+/gi,'');}catch(e){return src.split('?')[0].toLowerCase();}}
+
+function bestSrcset(ss){if(!ss)return null;const p=ss.split(',').map(p=>{const s=p.trim().split(/\s+/);return{url:s[0],w:parseInt(s[1])||0};}).filter(p=>p.url);p.sort((a,b)=>b.w-a.w);return p[0]?p[0].url:null;}
+
+function extractPhotos(doc,baseUrl){
+  const photos=[];const seen=new Set();
+  function add(raw,alt){if(!raw)return;let src;try{src=new URL(raw.trim(),baseUrl).href;}catch(e){return;}if(!isPhoto(src))return;const k=dedupKey(src);if(seen.has(k))return;seen.add(k);photos.push({src:toHQ(src),originalSrc:src,alt:alt||''});}
+  function bss(ss){return bestSrcset(ss);}
+  // Script tags first
+  doc.querySelectorAll('script').forEach(s=>{
+    const t=s.textContent||'';
+    if(!t.includes('trvl-media')&&!t.includes('peerspace')&&!t.includes('imageUrl')&&!t.includes('.jpg'))return;
+    for(const m of t.matchAll(/\{[^{}]{20,3000}\}/g)){const b=m[0];const uM=b.match(/"(?:url|src|imageUrl|image_url|imageURL|href)":\s*"(https?:\/\/[^"]{10,500})"/i);if(!uM||!isPhoto(uM[1]))continue;const aM=b.match(/"(?:caption|alt|altText|label|title)":\s*"([^"]{2,300})"/i);add(uM[1],aM?aM[1]:'');}
+    for(const m of t.matchAll(/"(https?:\/\/(?:images\.trvl-media\.com|mediaim\.expedia\.com|img\.peerspace\.com)[^"]{5,500})"/gi)){add(m[1],'');}
+  });
+  // Img tags
+  doc.querySelectorAll('img').forEach(img=>{const alt=img.alt||img.getAttribute('aria-label')||'';const src=bss(img.getAttribute('srcset'))||img.getAttribute('data-src')||img.getAttribute('data-lazy-src')||img.getAttribute('data-original')||img.src||'';if(src)add(src,alt);});
+  // Picture source
+  doc.querySelectorAll('picture source').forEach(s=>{const img=s.closest('picture')?.querySelector('img');const src=bss(s.getAttribute('srcset')||'');if(src)add(src,img?.alt||'');});
+  // Data attrs
+  ['data-src','data-background','data-bg','data-image','data-lazy'].forEach(attr=>{doc.querySelectorAll(`[${attr}]`).forEach(el=>{const v=el.getAttribute(attr);if(v&&(v.startsWith('http')||v.startsWith('/')))add(v,el.getAttribute('alt')||'');});});
+  return photos;
+}
+
+// SCAN via proxy
+document.getElementById('scanBtn').addEventListener('click',async()=>{
+  const url=document.getElementById('urlInput').value.trim();
+  if(!url){showToast('⚠️ Please paste a hotel URL first');return;}
+  const btn=document.getElementById('scanBtn');
+  const spinner=document.getElementById('scanSpinner');
+  const label=document.getElementById('scanLabel');
+
+  // Show loading state immediately
+  btn.disabled=true;
+  spinner.style.display='inline-block';
+  label.textContent='Scanning...';
+  document.getElementById('emptyState').style.display='none';
+  document.getElementById('statusBar').style.display='flex';
+  document.getElementById('statusText').textContent='Fetching page... please wait up to 15 seconds';
+  document.getElementById('toolbar').style.display='none';
+  document.getElementById('downloadBar').style.display='none';
+  document.getElementById('photoGrid').innerHTML='';
+  allPhotos=[];
+
+  // Force UI update before async
+  await new Promise(r=>setTimeout(r,50));
+
+  let html=null;
+  const proxies=[
+    `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+    `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    `https://thingproxy.freeboard.io/fetch/${url}`,
+  ];
+
+  for(const proxy of proxies){
+    try{
+      document.getElementById('statusText').textContent=`Trying proxy... please wait`;
+      const res=await fetch(proxy,{signal:AbortSignal.timeout(20000)});
+      let data;
+      try{data=await res.json();html=data.contents||data;}
+      catch(e){html=await res.text();}
+      if(html&&typeof html==='string'&&html.length>500)break;
+      html=null;
+    }catch(e){html=null;continue;}
+  }
+
+  if(!html){
+    document.getElementById('statusBar').style.display='none';
+    document.getElementById('emptyState').style.display='flex';
+    document.getElementById('emptyState').innerHTML=`
+      <div class="empty-emoji">⚠️</div>
+      <p><strong>Could not fetch the page automatically.</strong><br><br>
+      Try the manual method:<br><br>
+      1. Open the hotel page in Chrome<br>
+      2. Right-click → <strong>View Page Source</strong><br>
+      3. Press <strong>Cmd+A</strong> (Mac) / <strong>Ctrl+A</strong> (Windows) then copy<br>
+      4. Click <strong style="color:var(--amber)">Paste HTML</strong> button below and paste it there</p>
+      <button class="btn btn-amber" id="pasteHtmlBtn" style="margin-top:8px">📋 Paste HTML manually</button>`;
+    document.getElementById('pasteHtmlBtn')?.addEventListener('click',showPasteModal);
+    showToast('❌ Could not fetch — try Paste HTML method');
+    btn.disabled=false;spinner.style.display='none';label.textContent='🔍 Scan for Photos';
+    return;
+  }
+
+  document.getElementById('statusText').textContent='Extracting photos...';
+  await new Promise(r=>setTimeout(r,50));
+  
+  const parser=new DOMParser();
+  const doc=parser.parseFromString(html,'text/html');
+  const found=extractPhotos(doc,url);
+
+  const minSize=parseInt(document.getElementById('sizeFilter').value||'0');
+  allPhotos=minSize>0?found.filter(p=>/trvl-media|peerspace|exp-media/i.test(p.src)||p.originalSrc.length>100):found;
+
+  document.getElementById('statusBar').style.display='none';
+
+  if(allPhotos.length===0){
+    document.getElementById('emptyState').style.display='flex';
+    document.getElementById('emptyState').innerHTML=`
+      <div class="empty-emoji">😕</div>
+      <p>No photos found from this URL.<br><br>
+      Try the <strong>Paste HTML</strong> method instead for better results.</p>
+      <button class="btn btn-amber" id="pasteHtmlBtn2" style="margin-top:8px">📋 Paste HTML manually</button>`;
+    document.getElementById('pasteHtmlBtn2')?.addEventListener('click',showPasteModal);
+    showToast('❌ No photos found');
+  }else{
+    renderPhotos(allPhotos);
+    document.getElementById('toolbar').style.display='flex';
+    document.getElementById('downloadBar').style.display='flex';
+    document.getElementById('photoCount').textContent=`${allPhotos.length} photos found`;
+    showToast(`✅ ${allPhotos.length} photos found!`);
+  }
+  btn.disabled=false;spinner.style.display='none';label.textContent='🔍 Scan for Photos';
+});
+
+// Paste HTML modal
+function showPasteModal(){
+  const modal=document.createElement('div');
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML=`
+    <div style="background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:20px;width:100%;max-width:600px;display:flex;flex-direction:column;gap:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-weight:700;font-size:14px;">📋 Paste Page HTML</span>
+        <button id="closeModal" style="background:none;border:none;color:var(--text-muted);font-size:18px;cursor:pointer;">✕</button>
+      </div>
+      <p style="font-size:11px;color:var(--text-dim);line-height:1.6;">
+        1. Go to the hotel page in Chrome<br>
+        2. Right-click anywhere on the page → <strong>View Page Source</strong><br>
+        3. Press <strong>Cmd+A</strong> (Mac) or <strong>Ctrl+A</strong> (Windows) then <strong>Cmd/Ctrl+C</strong> to copy<br>
+        4. Click below and press <strong>Cmd/Ctrl+V</strong> to paste
+      </p>
+      <textarea id="htmlPaste" style="width:100%;height:200px;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:10px;color:var(--text);font-size:11px;font-family:monospace;resize:vertical;" placeholder="Paste the page HTML here (Ctrl+V)..."></textarea>
+      <input type="url" id="pasteUrl" style="width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--text);font-family:inherit;" placeholder="Also paste the page URL here...">
+      <button class="btn btn-primary" id="extractFromPaste">🔍 Extract Photos</button>
+    </div>`;
+  document.body.appendChild(modal);
+  document.getElementById('closeModal').onclick=()=>document.body.removeChild(modal);
+  document.getElementById('extractFromPaste').addEventListener('click',()=>{
+    const html=document.getElementById('htmlPaste').value.trim();
+    const url=document.getElementById('pasteUrl').value.trim()||'https://www.expedia.com/';
+    if(!html){showToast('⚠️ Please paste the HTML first');return;}
+    const parser=new DOMParser();
+    const doc=parser.parseFromString(html,'text/html');
+    const found=extractPhotos(doc,url);
+    const minSize=parseInt(document.getElementById('sizeFilter').value||'0');
+    allPhotos=minSize>0?found.filter(p=>/trvl-media|peerspace|exp-media/i.test(p.src)):found;
+    document.body.removeChild(modal);
+    if(allPhotos.length===0){showToast('❌ No photos found in pasted HTML');return;}
+    renderPhotos(allPhotos);
+    document.getElementById('emptyState').style.display='none';
+    document.getElementById('toolbar').style.display='flex';
+    document.getElementById('downloadBar').style.display='flex';
+    document.getElementById('photoCount').textContent=`${allPhotos.length} photos found`;
+    showToast(`✅ ${allPhotos.length} photos found!`);
+  });
+}
+
+// paste button uses onclick attribute directly
+
+// Render photos
+function renderPhotos(photos){
+  const grid=document.getElementById('photoGrid');
+  grid.innerHTML='';
+  photos.forEach((photo,i)=>{
+    const card=document.createElement('div');
+    card.className='photo-card';
+    card.dataset.src=photo.src;
+    card.innerHTML=`<img src="${photo.src}" alt="${(photo.alt||'').replace(/"/g,'')}" loading="lazy"><span class="photo-fmt">JPG</span><span class="photo-px"></span><div class="photo-actions"><button class="photo-action-btn" title="View">⛶</button><button class="photo-action-btn" title="ChatGPT">✏️</button></div>`;
+    const img=card.querySelector('img');
+    img.addEventListener('load',()=>{if(img.naturalWidth){const px=card.querySelector('.photo-px');px.textContent=`${img.naturalWidth}×${img.naturalHeight}`;px.style.display='block';}});
+    card.addEventListener('click',e=>{if(e.target.closest('.photo-action-btn'))return;card.classList.toggle('selected');updateToolbar();});
+    card.querySelectorAll('.photo-action-btn')[0].addEventListener('click',e=>{e.stopPropagation();openLightbox(photo.src);});
+    card.querySelectorAll('.photo-action-btn')[1].addEventListener('click',e=>{e.stopPropagation();window.open(CHATGPT_URL,'_blank');});
+    grid.appendChild(card);
+  });
+}
+
+// Toolbar
+function updateToolbar(){
+  const sel=document.querySelectorAll('.photo-card.selected').length;
+  document.getElementById('photoCount').textContent=sel>0?`${sel} of ${allPhotos.length} selected`:`${allPhotos.length} photos found`;
+  document.getElementById('addToHeaderBtn').disabled=sel===0;
+  document.getElementById('addToSleepingBtn').disabled=sel===0;
+  document.getElementById('downloadBtn').disabled=sel===0;
+  document.getElementById('downloadBtn').textContent=sel>0?`⬇ Download ${sel} Photo${sel!==1?'s':''}`:'⬇ Download Selected';
+}
+
+document.getElementById('selectAllBtn').addEventListener('click',()=>{
+  const cards=document.querySelectorAll('.photo-card');
+  const allSel=[...cards].every(c=>c.classList.contains('selected'));
+  cards.forEach(c=>allSel?c.classList.remove('selected'):c.classList.add('selected'));
+  updateToolbar();
+});
+
+// Baskets
+function renderBasket(basket,thumbsId,countId,sectionId){
+  document.getElementById(sectionId).style.display=basket.length===0?'none':'flex';
+  document.getElementById(countId).textContent=`${basket.length} photo${basket.length!==1?'s':''}`;
+  const thumbs=document.getElementById(thumbsId);
+  thumbs.innerHTML=basket.map((p,i)=>`<div class="basket-thumb"><img src="${p.src}" alt=""><button class="basket-remove" data-basket="${sectionId}" data-idx="${i}">✕</button></div>`).join('');
+  thumbs.querySelectorAll('.basket-remove').forEach(btn=>{btn.addEventListener('click',e=>{e.stopPropagation();const idx=parseInt(btn.dataset.idx);if(btn.dataset.basket==='headerBasketSection'){headerBasket.splice(idx,1);renderBasket(headerBasket,'headerBasketThumbs','headerBasketCount','headerBasketSection');}else{sleepingBasket.splice(idx,1);renderBasket(sleepingBasket,'sleepingBasketThumbs','sleepingBasketCount','sleepingBasketSection');}});});
+}
+
+function addSelected(type){
+  const selected=[...document.querySelectorAll('.photo-card.selected')];
+  if(!selected.length)return;
+  const target=type==='header'?headerBasket:sleepingBasket;
+  let added=0;
+  selected.forEach(c=>{const src=c.dataset.src;if(!target.find(p=>p.src===src)){target.push({src,alt:''});added++;}c.classList.remove('selected');});
+  if(type==='header')renderBasket(headerBasket,'headerBasketThumbs','headerBasketCount','headerBasketSection');
+  else renderBasket(sleepingBasket,'sleepingBasketThumbs','sleepingBasketCount','sleepingBasketSection');
+  updateToolbar();
+  showToast(`${type==='header'?'🧺':'🛏'} ${added} photo${added!==1?'s':''} added!`);
+}
+
+document.getElementById('addToHeaderBtn').addEventListener('click',()=>addSelected('header'));
+document.getElementById('addToSleepingBtn').addEventListener('click',()=>addSelected('sleeping'));
+document.getElementById('clearHeaderBasketBtn').addEventListener('click',()=>{headerBasket=[];renderBasket(headerBasket,'headerBasketThumbs','headerBasketCount','headerBasketSection');showToast('🗑 Cleared');});
+document.getElementById('clearSleepingBasketBtn').addEventListener('click',()=>{sleepingBasket=[];renderBasket(sleepingBasket,'sleepingBasketThumbs','sleepingBasketCount','sleepingBasketSection');showToast('🗑 Cleared');});
+
+// Fetch with headers
+function getReferer(src){try{const h=new URL(src).hostname;if(h.includes('trvl-media')||h.includes('expedia'))return'https://www.expedia.com/';if(h.includes('peerspace'))return'https://www.peerspace.com/';if(h.includes('marriott'))return'https://www.marriott.com/';if(h.includes('hilton'))return'https://www.hilton.com/';if(h.includes('booking.com')||h.includes('bstatic'))return'https://www.booking.com/';return'';}catch{return'';}}
+async function fetchImg(src){const ref=getReferer(src);const headers={'Accept':'image/jpeg,image/png,image/webp,image/*'};if(ref)headers['Referer']=ref;try{return await fetch(src,{headers,mode:'cors',credentials:'omit'});}catch{return await fetch(src,{mode:'no-cors'});}}
+
+// JPEG conversion
+async function toJpegBlob(src){
+  const res=await fetchImg(src);const blob=await res.blob();
+  return new Promise(resolve=>{
+    const img=new Image();const url=URL.createObjectURL(blob);
+    img.onload=()=>{const c=document.createElement('canvas');c.width=img.naturalWidth||1200;c.height=img.naturalHeight||900;const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(img,0,0);c.toBlob(b=>{URL.revokeObjectURL(url);resolve(b);},'image/jpeg',0.92);};
+    img.onerror=()=>{URL.revokeObjectURL(url);resolve(blob);};img.src=url;
+  });
+}
+
+// Download
+document.getElementById('downloadBtn').addEventListener('click',async()=>{
+  const selected=[...document.querySelectorAll('.photo-card.selected')];
+  if(!selected.length)return;
+  const folder=document.getElementById('folderName').value.trim().replace(/[<>:"\/\\|?*]/g,'').replace(/\s+/g,'_')||'Hotel_Photos';
+  const convert=document.getElementById('convertJpg').checked;
+  const btn=document.getElementById('downloadBtn');
+  btn.disabled=true;
+  for(let i=0;i<selected.length;i++){
+    const src=selected[i].dataset.src;
+    btn.textContent=`⏳ ${i+1}/${selected.length}...`;
+    try{
+      const blob=convert?await toJpegBlob(src):await fetchImg(src).then(r=>r.blob());
+      const ext=convert?'jpg':(src.split('?')[0].split('.').pop().toLowerCase()||'jpg');
+      const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`${folder}_${String(i+1).padStart(3,'0')}.${ext}`;a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+      await new Promise(r=>setTimeout(r,300));
+    }catch(e){console.warn('Download failed',e);}
+  }
+  btn.disabled=false;updateToolbar();
+  document.getElementById('successMsg').textContent=`✅ ${selected.length} downloaded!`;
+  setTimeout(()=>document.getElementById('successMsg').textContent='',4000);
+  selected.forEach(c=>c.classList.remove('selected'));
+});
+
+// Upload to Boompop
+async function uploadToBoompop(basket,inputId){
+  if(!basket.length){showToast('⚠️ Basket is empty');return;}
+  showToast(`⏳ Preparing ${basket.length} photos...`);
+  const files=[];
+  for(let i=0;i<basket.length;i++){
+    const blob=await toJpegBlob(basket[i].src);
+    files.push(new File([blob],`photo_${String(i+1).padStart(2,'0')}.jpg`,{type:'image/jpeg'}));
+  }
+  const fileDataList=await Promise.all(files.map(f=>new Promise(res=>{const reader=new FileReader();reader.onload=()=>res({name:f.name,type:f.type,data:reader.result.split(',')[1]});reader.readAsDataURL(f);})));
+  try{
+    const bc=new BroadcastChannel('boompop_upload');
+    bc.postMessage({action:'upload',inputId,files:fileDataList});
+    bc.close();
+    showToast('✅ Upload signal sent! Make sure Boompop edit page is open in same browser.');
+  }catch(e){showToast('❌ '+e.message);}
+}
+
+document.getElementById('uploadHeaderBtn').addEventListener('click',()=>uploadToBoompop(headerBasket,'headerImagesmedia-uploader-field'));
+document.getElementById('uploadSleepingBtn').addEventListener('click',()=>uploadToBoompop(sleepingBasket,'hotelSleepingRoomImagesmedia-uploader-field'));
+document.getElementById('clearBoompopBtn').addEventListener('click',()=>{
+  try{const bc=new BroadcastChannel('boompop_upload');bc.postMessage({action:'clear_header'});bc.close();}catch(e){}
+  showToast('📤 Clear signal sent!');
+});
+</script>
+</body>
+</html>
